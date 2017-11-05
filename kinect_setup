@@ -1,0 +1,12 @@
+
+To test for connection
+
+lsusb | grep Xbox
+
+To reset Connection
+
+echo -1 | sudo tee -a /sys/module/usbcore/parameters/autosuspend
+
+to test
+
+sudo freenect-glview
