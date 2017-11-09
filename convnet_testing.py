@@ -1,4 +1,4 @@
-import tensorflow as tf:
+import tensorflow as tf
 
 #rgb size = (480, 640, 3)
 learning_rate = 0.0001
@@ -36,9 +36,6 @@ def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_sh
 
     return out_layer
 
-
-
-
 layer1 = create_new_conv_layer(x, 3, 32, [5, 5], [2, 2], name='layer1')
 layer2 = create_new_conv_layer(layer1, 32, 64, [5, 5], [2, 2], name='layer2')
 
@@ -54,3 +51,35 @@ wd2 = tf.Variable(tf.truncated_normal([1000, 1], stddev=0.03), name='wd2')
 bd2 = tf.Variable(tf.truncated_normal([1], stddev=0.01), name='bd2')
 dense_layer2 = tf.matmul(dense_layer1, wd2) + bd2
 y_ = tf.nn.softmax(dense_layer2)
+
+cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=dense_layer2, labels=y))
+
+
+optimiser = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cross_entropy)
+
+# define an accuracy assessment operation
+correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+# setup the initialisation operator
+init_op = tf.global_variables_initializer()
+
+with tf.Session() as sess:
+    # initialise the variables
+    sess.run(init_op)
+    total_batch = int(len(mnist.train.labels) / batch_size)
+    for epoch in range(epochs):
+        avg_cost = 0
+        for i in range(total_batch):
+            
+            batch_x, batch_y = mnist.train.next_batch(batch_size=batch_size)
+
+            _, c = sess.run([optimiser, cross_entropy],
+                            feed_dict={x: batch_x, y: batch_y})
+            avg_cost += c / total_batch
+        test_acc = sess.run(accuracy,
+                       feed_dict={x: mnist.test.images, y: mnist.test.labels})
+        print("Epoch:", (epoch + 1), "cost =", "{:.3f}".format(avg_cost), "test accuracy: {:.3f}".format(test_acc))
+
+    print("\nTraining complete!")
+    print(sess.run(accuracy, feed_dict={x: mnist.test.images, y: mnist.test.labels}))
